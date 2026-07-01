@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spotify Moments AI — Prototype</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+.wrap { display: flex; flex-direction: column; align-items: center; }
+.label-top { color: #555; font-size: 11px; letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase; }
+.phone-frame { width: 375px; margin: 0 auto; background: #121212; border-radius: 32px; border: 8px solid #0a0a0a; overflow: hidden; position: relative; height: 720px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+.screen { position: absolute; inset: 0; background: #121212; overflow-y: auto; transition: transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.35s; }
+.screen.hide { transform: translateX(100%); opacity: 0; pointer-events: none; }
+.statusbar { height: 28px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 11px; color: #fff; font-weight: 500; }
+.topbar { display: flex; align-items: center; gap: 12px; padding: 6px 16px 12px; }
+.topbar .back { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; line-height: 1; }
+.topbar h1 { color: #fff; font-size: 15px; font-weight: 700; }
+.ai-badge { background: linear-gradient(135deg,#1DB954,#0d7a35); color: #04210f; font-size: 9.5px; font-weight: 800; padding: 3px 9px; border-radius: 10px; letter-spacing: 0.4px; }
+.hero-wrap { padding: 18px 20px 0; text-align: center; }
+.pulse-orb { width: 130px; height: 130px; margin: 10px auto 16px; border-radius: 50%; background: radial-gradient(circle, #1DB954 0%, #0d3320 70%); display: flex; align-items: center; justify-content: center; font-size: 48px; position: relative; }
+.pulse-ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(29,185,84,0.4); animation: ring 2.2s ease-out infinite; }
+.pulse-ring.r2 { animation-delay: 0.7s; }
+@keyframes ring { 0% { transform: scale(0.9); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+.hero-title { color: #fff; font-size: 19px; font-weight: 800; }
+.hero-sub { color: #B3B3B3; font-size: 12.5px; margin-top: 6px; line-height: 1.5; padding: 0 16px; }
+.feature-row { margin: 16px 16px 0; background: #181818; border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; border: 0.5px solid #2a2a2a; }
+.feature-icon { width: 42px; height: 42px; border-radius: 10px; background: rgba(29,185,84,0.12); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+.feature-text { flex: 1; }
+.feature-title { color: #fff; font-size: 13.5px; font-weight: 700; }
+.feature-sub { color: #B3B3B3; font-size: 11px; margin-top: 2px; }
+.chevron { color: #535353; font-size: 16px; }
+.waveform-row { display: flex; align-items: flex-end; gap: 3px; height: 50px; justify-content: center; margin: 14px 0; }
+.wv-bar { width: 4px; background: #535353; border-radius: 2px; }
+.wv-bar.highlighted { background: #1DB954; }
+.segment-card { margin: 0 20px; background: #181818; border-radius: 16px; padding: 18px; border: 0.5px solid #2a2a2a; }
+.segment-time { color: #B3B3B3; font-size: 11px; text-align: center; margin-bottom: 4px; }
+.segment-track { color: #fff; font-size: 15px; font-weight: 700; text-align: center; }
+.segment-label { color: #1DB954; font-size: 11px; font-weight: 700; text-align: center; margin-top: 4px; }
+.btn-primary { width: 100%; background: #1DB954; color: #04210f; border: none; border-radius: 24px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.btn-ghost { width: 100%; background: none; color: #B3B3B3; border: none; padding: 12px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+.memory-card { margin: 16px 20px 0; border-radius: 16px; padding: 22px; background: linear-gradient(160deg,#1a3326,#121212); text-align: center; border: 0.5px solid rgba(29,185,84,0.2); }
+.memory-icon { font-size: 36px; margin-bottom: 10px; }
+.memory-title { color: #fff; font-size: 16px; font-weight: 800; }
+.memory-date { color: #B3B3B3; font-size: 11px; margin-top: 4px; }
+.memory-tracks { display: flex; justify-content: center; gap: 8px; margin: 16px 0; }
+.memory-track-pill { width: 44px; height: 44px; border-radius: 8px; background: linear-gradient(135deg,#3a3a3a,#1a1a1a); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.mashup-card { margin: 16px 20px 0; background: #181818; border-radius: 16px; padding: 18px; text-align: center; border: 0.5px solid #2a2a2a; }
+.mashup-tracks { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 14px 0; }
+.mashup-track { width: 56px; height: 56px; border-radius: 10px; background: linear-gradient(135deg,#3a3a3a,#1a1a1a); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.mashup-plus { color: #535353; font-size: 18px; font-weight: 700; }
+.mashup-equals { color: #1DB954; font-size: 20px; font-weight: 700; }
+.mashup-result { width: 64px; height: 64px; border-radius: 12px; background: linear-gradient(135deg,#1DB954,#0d3320); display: flex; align-items: center; justify-content: center; font-size: 26px; }
+.section-label { color: #1DB954; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; padding: 16px 20px 8px; }
+.price-hero { text-align: center; padding: 26px 24px 6px; }
+.price-tag { color: #1DB954; font-size: 40px; font-weight: 800; line-height: 1; }
+.price-tag .per { color: #B3B3B3; font-size: 13px; font-weight: 500; }
+.price-name { color: #fff; font-size: 13px; font-weight: 600; margin-top: 6px; }
+.feature-list { padding: 0 20px; }
+.feature-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 0.5px solid #2a2a2a; }
+.feature-item span { color: #fff; font-size: 13px; }
+.pay-btn { margin: 16px 20px 0; background: #1DB954; color: #04210f; border: none; border-radius: 28px; padding: 14px; font-size: 14px; font-weight: 700; cursor: pointer; width: calc(100% - 40px); }
+.success-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px 28px; text-align: center; }
+.success-icon { width: 76px; height: 76px; border-radius: 50%; background: rgba(29,185,84,0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 22px; font-size: 36px; color: #1DB954; }
+.success-title { color: #fff; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.success-sub { color: #B3B3B3; font-size: 13px; line-height: 1.6; margin-bottom: 26px; }
+.lock-overlay { position: absolute; inset: 0; background: rgba(18,18,18,0.6); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5; padding: 0 30px; text-align: center; }
+.lock-overlay .icon { font-size: 38px; margin-bottom: 14px; }
+.lock-overlay .title { color: #fff; font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+.lock-overlay .sub { color: #d0d0d0; font-size: 12.5px; line-height: 1.5; margin-bottom: 18px; }
+.blurred { filter: blur(6px); pointer-events: none; }
+.nav-chips { display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap; max-width: 375px; }
+.nav-chip { background: #181818; color: #B3B3B3; border: 0.5px solid #2a2a2a; border-radius: 16px; padding: 6px 12px; font-size: 11px; cursor: pointer; }
+.nav-chip:hover { color: #fff; border-color: #535353; }
+
+.upi-app-row { display:flex;align-items:center;gap:14px;padding:12px 20px;cursor:pointer;border-bottom:0.5px solid #2a2a2a; }
+.upi-app-row:hover { background:rgba(255,255,255,0.04); }
+.upi-app-row:last-child { border-bottom:none; }
+.upi-dot { width:8px;height:8px;border-radius:50%;background:#1DB954;animation:upi-pulse 1.2s infinite; }
+.upi-dot:nth-child(2) { animation-delay:0.2s; }
+.upi-dot:nth-child(3) { animation-delay:0.4s; }
+@keyframes upi-pulse { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.1)} }
+@keyframes upi-success-spin { 0%{transform:scale(0.5);opacity:0} 60%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="label-top">Solution 3 — Spotify Moments AI — Prototype</p>
+<div class="phone-frame" id="phone">
+
+  <div class="screen" id="scr-home">
+    <div class="statusbar"><span>9:41</span><span>📶</span></div>
+    <div class="topbar"><span style="visibility:hidden">‹</span><h1 style="flex:1;">Moments AI</h1><span class="ai-badge">✨ AI</span><span id="plan-badge" class="ai-badge" style="display:none;margin-left:6px;background:linear-gradient(135deg,#1DB954,#0d7a35);">PLUS</span></div>
+    <div class="hero-wrap">
+      <div class="pulse-orb"><div class="pulse-ring"></div><div class="pulse-ring r2"></div>🧠</div>
+      <div class="hero-title">Your music, understood</div>
+      <div class="hero-sub">AI finds the exact moments, emotions, and connections in everything you listen to.</div>
+    </div>
+    <div class="feature-row" onclick="go('scr-home','scr-favsegment')">
+      <div class="feature-icon">🎯</div>
+      <div class="feature-text"><div class="feature-title">Favorite song segments</div><div class="feature-sub">The exact 12 seconds you replay most</div></div>
+      <span class="chevron">›</span>
+    </div>
+    <div class="feature-row" onclick="go('scr-home','scr-memory')">
+      <div class="feature-icon">💭</div>
+      <div class="feature-text"><div class="feature-title">Emotional memory soundtrack</div><div class="feature-sub">Songs tied to moments in your life</div></div>
+      <span class="chevron">›</span>
+    </div>
+    <div class="feature-row" onclick="go('scr-home','scr-mashup')">
+      <div class="feature-icon">🔀</div>
+      <div class="feature-text"><div class="feature-title">AI mashups</div><div class="feature-sub">Blend two songs you love into one</div></div>
+      <span class="chevron">›</span>
+    </div>
+    <div class="feature-row" onclick="go('scr-home','scr-shared')">
+      <div class="feature-icon">🧩</div>
+      <div class="feature-text"><div class="feature-title">Shared listening intelligence</div><div class="feature-sub">What you and a friend both feel</div></div>
+      <span class="chevron">›</span>
+    </div>
+  </div>
+
+  <div class="screen hide" id="scr-favsegment">
+    <div class="statusbar"><span>9:41</span><span>📶</span></div>
+    <div class="topbar"><button class="back" onclick="go('scr-favsegment','scr-home')">‹</button><h1>Favorite segment</h1></div>
+    <div style="padding:10px 20px 0;text-align:center;">
+      <div style="color:#B3B3B3;font-size:12px;">AI scanned 284 plays this week</div>
+    </div>
+    <div class="waveform-row" id="waveform"></div>
+    <div class="segment-card">
+      <div class="segment-time">0:58 — 1:10</div>
+      <div class="segment-track">Kesariya — the bridge</div>
+      <div class="segment-label">Replayed 19 times this week</div>
+    </div>
+    <div id="favseg-lock-card" style="margin:16px 20px 0;background:#181818;border-radius:14px;padding:16px;text-align:center;">
+      <div style="color:#fff;font-size:13px;font-weight:700;margin-bottom:4px;">🔒 Full segment library is Plus-only</div>
+      <div style="color:#B3B3B3;font-size:11.5px;margin-bottom:12px;">Free users see this week's top segment. Plus unlocks your entire replay history, mapped.</div>
+      <button class="btn-primary" onclick="go('scr-favsegment','scr-upgrade')">Unlock segment history — ₹99/mo</button>
+    </div>
+  </div>
+
+  <div class="screen hide" id="scr-memory">
+    <div class="statusbar"><span>9:41</span><span>📶</span></div>
+    <div class="topbar"><button class="back" onclick="go('scr-memory','scr-home')">‹</button><h1>Memory soundtrack</h1></div>
+    <div class="memory-card">
+      <div class="memory-icon">🌧️</div>
+      <div class="memory-title">Monsoon, first year of college</div>
+      <div class="memory-date">Built from your June 2023 listening</div>
+      <div class="memory-tracks">
+        <div class="memory-track-pill">🎵</div>
+        <div class="memory-track-pill">🎵</div>
+        <div class="memory-track-pill">🎵</div>
+        <div class="memory-track-pill">🎵</div>
+      </div>
+      <div style="color:#d0d0d0;font-size:11.5px;line-height:1.5;">These 4 songs played most during a 3-week stretch the AI noticed in your history.</div>
+    </div>
+    <div id="memory-lock-card" style="margin:16px 20px 0;background:#181818;border-radius:14px;padding:16px;text-align:center;">
+      <div style="color:#fff;font-size:13px;font-weight:700;margin-bottom:4px;">🔒 More memories are locked</div>
+      <div style="color:#B3B3B3;font-size:11.5px;margin-bottom:12px;">Free users get 1 memory soundtrack. Plus unlocks unlimited memories, generated monthly.</div>
+      <button class="btn-primary" onclick="go('scr-memory','scr-upgrade')">Unlock all memories — ₹99/mo</button>
+    </div>
+    <div id="memory-extra" style="display:none;">
+      <div class="memory-card" style="margin-top:12px;background:linear-gradient(160deg,#1a2035,#121212);border-color:rgba(61,52,185,0.2);">
+        <div class="memory-icon">🌆</div>
+        <div class="memory-title">Last summer road trip</div>
+        <div class="memory-date">Built from your May 2024 listening</div>
+        <div class="memory-tracks"><div class="memory-track-pill">🎵</div><div class="memory-track-pill">🎵</div><div class="memory-track-pill">🎵</div></div>
+        <div style="color:#d0d0d0;font-size:11.5px;line-height:1.5;">High-energy playlist you played on repeat across 3 consecutive days.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen hide" id="scr-mashup" style="position:relative;">
+    <div class="statusbar"><span>9:41</span><span>📶</span></div>
+    <div class="topbar"><button class="back" onclick="go('scr-mashup','scr-home')">‹</button><h1>AI mashup</h1></div>
+    <div class="blurred" id="mashup-content">
+      <div class="mashup-card">
+        <div style="color:#fff;font-size:13px;font-weight:700;">Kesariya × Levitating</div>
+        <div class="mashup-tracks">
+          <div class="mashup-track">🎵</div><div class="mashup-plus">+</div>
+          <div class="mashup-track">🎵</div><div class="mashup-equals">=</div>
+          <div class="mashup-result">✨</div>
+        </div>
+        <div style="color:#B3B3B3;font-size:11.5px;">AI-blended 2:14 mashup, ready to play</div>
+      </div>
+    </div>
+    <div id="mashup-unlocked" style="display:none;">
+      <div class="mashup-card" style="filter:none;">
+        <div style="color:#fff;font-size:13px;font-weight:700;margin-bottom:4px;">Kesariya × Levitating</div>
+        <div class="mashup-tracks">
+          <div class="mashup-track">🎵</div><div class="mashup-plus">+</div>
+          <div class="mashup-track">🎵</div><div class="mashup-equals">=</div>
+          <div class="mashup-result" style="animation:pulse-glow 2s infinite;">✨</div>
+        </div>
+        <div style="color:#B3B3B3;font-size:11.5px;margin-bottom:16px;">AI-blended 2:14 mashup, ready to play</div>
+        <button class="btn-primary">▶ Play mashup</button>
+        <div style="margin-top:12px;background:#1a1a1a;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:11.5px;color:#B3B3B3;">Or try a new blend:</span>
+          <span style="background:#2a2a2a;color:#1DB954;font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px;cursor:pointer;">+ New mashup</span>
+        </div>
+      </div>
+    </div>
+    <div class="lock-overlay" id="mashup-lock-overlay">
+      <div class="icon">🔀</div>
+      <div class="title">Create AI mashups</div>
+      <div class="sub">Pick any two songs and let AI blend them into something new — only on Plus.</div>
+      <button class="btn-primary" onclick="go('scr-mashup','scr-upgrade')">Unlock AI mashups — ₹99/mo</button>
+      <button class="btn-ghost" onclick="go('scr-mashup','scr-home')">Maybe later</button>
+    </div>
+  </div>
+
+  <div class="screen hide" id="scr-shared" style="position:relative;">
+    <div class="statusbar"><span>9:41</span><span>📶</span></div>
+    <div class="topbar"><button class="back" onclick="go('scr-shared','scr-home')">‹</button><h1>Shared intelligence</h1></div>
+    <div class="blurred" id="shared-content">
+      <div style="padding:20px;text-align:center;">
+        <div style="display:flex;justify-content:center;gap:-8px;margin-bottom:16px;">
+          <div style="width:48px;height:48px;border-radius:50%;background:#993556;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;">P</div>
+          <div style="width:48px;height:48px;border-radius:50%;background:#3c3489;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;margin-left:-12px;">R</div>
+        </div>
+        <div style="color:#fff;font-size:15px;font-weight:700;">You and Rahul both replay sad songs at 11pm</div>
+        <div style="color:#B3B3B3;font-size:11.5px;margin-top:8px;">AI noticed a shared late-night listening pattern across both your histories.</div>
+      </div>
+    </div>
+    <div id="shared-unlocked" style="display:none;padding:20px;">
+      <div style="display:flex;justify-content:center;gap:-8px;margin-bottom:16px;">
+        <div style="width:48px;height:48px;border-radius:50%;background:#993556;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;">P</div>
+        <div style="width:48px;height:48px;border-radius:50%;background:#3c3489;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;margin-left:-12px;">R</div>
+      </div>
+      <div style="text-align:center;color:#fff;font-size:15px;font-weight:700;margin-bottom:6px;">You and Rahul both replay sad songs at 11pm</div>
+      <div style="text-align:center;color:#B3B3B3;font-size:11.5px;margin-bottom:18px;">AI noticed a shared late-night listening pattern across both your histories.</div>
+      <div style="background:#181818;border-radius:14px;padding:14px;margin-bottom:10px;border-left:3px solid #1DB954;">
+        <div style="color:#1DB954;font-size:10px;font-weight:700;letter-spacing:0.5px;">SHARED MOOD</div>
+        <div style="color:#fff;font-size:13px;font-weight:600;margin-top:4px;">Late Night Nostalgia</div>
+        <div style="color:#B3B3B3;font-size:11px;margin-top:2px;">38 overlapping tracks this month</div>
+      </div>
+      <div style="background:#181818;border-radius:14px;padding:14px;border-left:3px solid #3c3489;">
+        <div style="color:#B3B3B3;font-size:10px;font-weight:700;letter-spacing:0.5px;">ONLY RAHUL LIKES</div>
+        <div style="color:#fff;font-size:13px;font-weight:600;margin-top:4px;">High-energy Bollywood</div>
+        <div style="color:#B3B3B3;font-size:11px;margin-top:2px;">You could explore these next</div>
+      </div>
+    </div>
+    <div class="lock-overlay" id="shared-lock-overlay">
+      <div class="icon">🧩</div>
+      <div class="title">See what you share</div>
+      <div class="sub">AI compares listening patterns with friends and surfaces what you both feel — only on Plus.</div>
+      <button class="btn-primary" onclick="go('scr-shared','scr-upgrade')">Unlock shared intelligence — ₹99/mo</button>
+      <button class="btn-ghost" onclick="go('scr-shared','scr-home')">Maybe later</button>
+    </div>
+  </div>
+
+  <div class="screen hide" id="scr-upgrade">
+    <div class="statusbar"><span>9:41</span><span>📶</span></div>
+    <div class="topbar"><button class="back" onclick="go('scr-upgrade','scr-home')">‹</button><h1>Spotify Plus</h1></div>
+    <div class="price-hero"><div class="price-tag">₹99<span class="per">/month</span></div><div class="price-name">Plus pack · includes Moments AI</div></div>
+    <div class="section-label">MOMENTS AI FEATURES</div>
+    <div class="feature-list">
+      <div class="feature-item"><span>🎯 Full favorite-segment history</span></div>
+      <div class="feature-item"><span>💭 Unlimited memory soundtracks</span></div>
+      <div class="feature-item"><span>🔀 AI mashup creation</span></div>
+      <div class="feature-item"><span>🧩 Shared listening intelligence</span></div>
+    </div>
+    <button class="pay-btn" onclick="payNow()">📱 Pay ₹99 with UPI</button>
+  </div>
+
+  <div class="screen hide" id="scr-success">
+    <div class="statusbar"><span>9:41</span><span>📶</span></div>
+    <div class="success-wrap">
+      <div class="success-icon">✓</div>
+      <div class="success-title">Moments AI unlocked</div>
+      <div class="success-sub">Your full segment history, unlimited memories, and AI mashups are ready to explore.</div>
+      <button class="btn-primary" style="width:auto;padding:13px 32px;" onclick="go('scr-success','scr-home')">Explore Moments AI</button>
+    </div>
+  </div>
+
+  <div id="pay-modal" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.75);z-index:20;flex-direction:column;justify-content:flex-end;">
+    <div style="background:#1a1a1a;border-radius:22px 22px 0 0;width:100%;padding:0 0 8px 0;overflow:hidden;">
+      <div id="upi-step1">
+        <div style="background:#111;padding:14px 20px 10px;display:flex;align-items:center;justify-content:space-between;">
+          <div><div style="color:#B3B3B3;font-size:10.5px;font-weight:600;letter-spacing:0.4px;">PAYING TO SPOTIFY</div>
+          <div style="color:#fff;font-size:18px;font-weight:800;" id="upi-amount-label">₹99</div></div>
+          <div style="text-align:right;"><div style="color:#B3B3B3;font-size:10px;">Secured by</div><div style="color:#1DB954;font-size:12px;font-weight:700;">BHIM UPI</div></div>
+        </div>
+        <div style="padding:14px 20px 4px;color:#B3B3B3;font-size:10.5px;font-weight:700;letter-spacing:0.6px;">PAY WITH</div>
+        <div onclick="upiSelectApp('gpay')" class="upi-app-row"><div style="width:38px;height:38px;border-radius:10px;background:#1a73e8;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;">G</div><div style="flex:1;"><div style="color:#fff;font-size:13.5px;font-weight:600;">Google Pay</div><div style="color:#535353;font-size:11px;">BHIM UPI</div></div><div style="color:#535353;font-size:16px;">›</div></div>
+        <div onclick="upiSelectApp('phonepe')" class="upi-app-row"><div style="width:38px;height:38px;border-radius:10px;background:#5f259f;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;">₱</div><div style="flex:1;"><div style="color:#fff;font-size:13.5px;font-weight:600;">PhonePe</div><div style="color:#535353;font-size:11px;">BHIM UPI</div></div><div style="color:#535353;font-size:16px;">›</div></div>
+        <div onclick="upiSelectApp('paytm')" class="upi-app-row"><div style="width:38px;height:38px;border-radius:10px;background:#00B9F1;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;">₹</div><div style="flex:1;"><div style="color:#fff;font-size:13.5px;font-weight:600;">Paytm</div><div style="color:#535353;font-size:11px;">BHIM UPI</div></div><div style="color:#535353;font-size:16px;">›</div></div>
+        <div onclick="upiSelectApp('upiid')" class="upi-app-row"><div style="width:38px;height:38px;border-radius:10px;background:#242424;display:flex;align-items:center;justify-content:center;font-size:16px;">⌨️</div><div style="flex:1;"><div style="color:#fff;font-size:13.5px;font-weight:600;">Enter UPI ID manually</div><div style="color:#535353;font-size:11px;">yourid@bank</div></div><div style="color:#535353;font-size:16px;">›</div></div>
+        <button onclick="closeUpi()" style="width:100%;background:none;color:#535353;border:none;padding:14px;font-size:13px;cursor:pointer;">Cancel</button>
+      </div>
+      <div id="upi-step2" style="display:none;padding:20px 20px 12px;">
+        <div style="color:#fff;font-size:16px;font-weight:700;margin-bottom:4px;">Enter UPI ID</div>
+        <div style="color:#B3B3B3;font-size:12px;margin-bottom:16px;">Format: name@bank (e.g. rahul@okicici)</div>
+        <div style="background:#121212;border:1px solid #333;border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;"><input id="upi-id-input" type="text" placeholder="yourname@upi" value="rahul@okicici" style="background:none;border:none;color:#fff;font-size:14px;width:100%;outline:none;font-family:inherit;" /><span style="color:#1DB954;font-size:11px;font-weight:700;cursor:pointer;" onclick="document.getElementById('upi-id-input').value=''">Clear</span></div>
+        <button onclick="upiVerify()" style="width:100%;background:#1DB954;color:#04210f;border:none;border-radius:24px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;">Verify & Pay</button>
+        <button onclick="upiShowStep(1)" style="width:100%;background:none;color:#B3B3B3;border:none;padding:10px;font-size:13px;cursor:pointer;margin-top:2px;">← Back</button>
+      </div>
+      <div id="upi-step3" style="display:none;padding:28px 20px 20px;text-align:center;">
+        <div id="upi-app-logo" style="width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:22px;font-weight:800;color:#fff;background:#1a73e8;">G</div>
+        <div style="color:#fff;font-size:16px;font-weight:700;margin-bottom:6px;" id="upi-step3-title">Waiting for approval</div>
+        <div style="color:#B3B3B3;font-size:12.5px;line-height:1.6;margin-bottom:22px;" id="upi-step3-desc">Open Google Pay and approve the payment request.</div>
+        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:24px;"><div class="upi-dot"></div><div class="upi-dot"></div><div class="upi-dot"></div></div>
+        <div style="background:#121212;border-radius:12px;padding:12px 14px;text-align:left;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:#535353;font-size:11px;">Amount</span><span style="color:#fff;font-size:11px;font-weight:700;" id="upi-confirm-amount">₹99</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:#535353;font-size:11px;">Merchant</span><span style="color:#fff;font-size:11px;">Spotify India Pvt Ltd</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:#535353;font-size:11px;">Ref ID</span><span style="color:#fff;font-size:11px;" id="upi-ref-id">SPT2406301234</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+          <div style="text-align:right;">
+            <div style="color:#B3B3B3;font-size:10px;">Secured by</div>
+            <div style="color:#1DB954;font-size:12px;font-weight:700;">BHIM UPI</div>
+          </div>
+        </div>
+        <div style="padding:14px 20px 4px;color:#B3B3B3;font-size:10.5px;font-weight:700;letter-spacing:0.6px;">PAY WITH</div>
+        <div onclick="upiSelectApp('gpay')" class="upi-app-row">
+          <div style="width:38px;height:38px;border-radius:10px;background:#1a73e8;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;">G</div>
+          <div style="flex:1;"><div style="color:#fff;font-size:13.5px;font-weight:600;">Google Pay</div><div style="color:#535353;font-size:11px;">BHIM UPI</div></div>
+          <div style="color:#535353;font-size:16px;">›</div>
+        </div>
+        <div onclick="upiSelectApp('phonepe')" class="upi-app-row">
+          <div style="width:38px;height:38px;border-radius:10px;background:#5f259f;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;">₱</div>
+          <div style="flex:1;"><div style="color:#fff;font-size:13.5px;font-weight:600;">PhonePe</div><div style="color:#535353;font-size:11px;">BHIM UPI</div></div>
+          <div style="color:#535353;font-size:16px;">›</div>
+        </div>
+        <div onclick="upiSelectApp('paytm')" class="upi-app-row">
+          <div style="width:38px;height:38px;border-radius:10px;background:#00B9F1;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;">₹</div>
+          <div style="flex:1;"><div style="color:#fff;font-size:13.5px;font-weight:600;">Paytm</div><div style="color:#535353;font-size:11px;">BHIM UPI</div></div>
+          <div style="color:#535353;font-size:16px;">›</div>
+        </div>
+        <div onclick="upiSelectApp('upiid')" class="upi-app-row">
+          <div style="width:38px;height:38px;border-radius:10px;background:#242424;display:flex;align-items:center;justify-content:center;font-size:16px;">⌨️</div>
+          <div style="flex:1;"><div style="color:#fff;font-size:13.5px;font-weight:600;">Enter UPI ID manually</div><div style="color:#535353;font-size:11px;">yourid@bank</div></div>
+          <div style="color:#535353;font-size:16px;">›</div>
+        </div>
+        <button onclick="closeUpi()" style="width:100%;background:none;color:#535353;border:none;padding:14px;font-size:13px;cursor:pointer;">Cancel</button>
+      </div>
+
+      <!-- Step 2: UPI ID manual entry -->
+      <div id="upi-step2" style="display:none;padding:20px 20px 12px;">
+        <div style="color:#fff;font-size:16px;font-weight:700;margin-bottom:4px;">Enter UPI ID</div>
+        <div style="color:#B3B3B3;font-size:12px;margin-bottom:16px;">Format: name@bank &nbsp;(e.g. rahul@okicici)</div>
+        <div style="background:#121212;border:1px solid #333;border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+          <input id="upi-id-input" type="text" placeholder="yourname@upi" value="rahul@okicici"
+            style="background:none;border:none;color:#fff;font-size:14px;width:100%;outline:none;font-family:inherit;" />
+          <span style="color:#1DB954;font-size:11px;font-weight:700;cursor:pointer;" onclick="document.getElementById('upi-id-input').value=''">Clear</span>
+        </div>
+        <button onclick="upiVerify()" style="width:100%;background:#1DB954;color:#04210f;border:none;border-radius:24px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;">Verify & Pay</button>
+        <button onclick="upiShowStep(1)" style="width:100%;background:none;color:#B3B3B3;border:none;padding:10px;font-size:13px;cursor:pointer;margin-top:2px;">← Back</button>
+      </div>
+
+      <!-- Step 3: Processing / waiting for approval -->
+      <div id="upi-step3" style="display:none;padding:28px 20px 20px;text-align:center;">
+        <div id="upi-step3-content">
+          <div id="upi-app-logo" style="width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:22px;font-weight:800;color:#fff;background:#1a73e8;">G</div>
+          <div style="color:#fff;font-size:16px;font-weight:700;margin-bottom:6px;" id="upi-step3-title">Waiting for approval</div>
+          <div style="color:#B3B3B3;font-size:12.5px;line-height:1.6;margin-bottom:22px;" id="upi-step3-desc">Open Google Pay and approve the payment request.</div>
+          <div style="display:flex;justify-content:center;gap:8px;margin-bottom:24px;">
+            <div class="upi-dot"></div><div class="upi-dot"></div><div class="upi-dot"></div>
+          </div>
+          <div style="background:#121212;border-radius:12px;padding:12px 14px;text-align:left;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span style="color:#535353;font-size:11px;">Amount</span>
+              <span style="color:#fff;font-size:11px;font-weight:700;" id="upi-confirm-amount">₹49</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span style="color:#535353;font-size:11px;">Merchant</span>
+              <span style="color:#fff;font-size:11px;">Spotify India Pvt Ltd</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:#535353;font-size:11px;">Ref ID</span>
+              <span style="color:#fff;font-size:11px;" id="upi-ref-id">SPT2406301234</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  </div>
+</div>
+<div class="nav-chips">
+  <button class="nav-chip" onclick="go(activeScreen(),'scr-home')">Home</button>
+  <button class="nav-chip" onclick="go(activeScreen(),'scr-favsegment')">Favorite segment</button>
+  <button class="nav-chip" onclick="go(activeScreen(),'scr-memory')">Memory soundtrack</button>
+  <button class="nav-chip" onclick="go(activeScreen(),'scr-mashup')">AI mashup</button>
+  <button class="nav-chip" onclick="go(activeScreen(),'scr-shared')">Shared intelligence</button>
+  <button class="nav-chip" onclick="go(activeScreen(),'scr-upgrade')">Upgrade screen</button>
+  <button class="nav-chip" onclick="location.reload()" style="border-color:#535353;">↻ Reset demo</button>
+</div>
+</div>
+<script>
+let current = 'scr-home';
+let isPlus = false;
+function activeScreen() { return current; }
+function go(from, to) {
+  document.querySelectorAll('.screen').forEach(s => { if (s.id !== to) s.classList.add('hide'); });
+  document.getElementById(to).classList.remove('hide');
+  current = to;
+  if (to === 'scr-favsegment') buildWaveform();
+}
+function buildWaveform() {
+  const wf = document.getElementById('waveform');
+  if (wf.children.length) return;
+  const heights = [12,20,16,28,34,40,46,38,44,50,42,30,22,18,14,24,32,38,28,16,12,20,26,34,30,22,14,18,24,16];
+  let html = '';
+  heights.forEach((h, i) => {
+    const highlighted = i >= 14 && i <= 18;
+    html += '<div class="wv-bar ' + (highlighted ? 'highlighted' : '') + '" style="height:' + h + 'px;"></div>';
+  });
+  wf.innerHTML = html;
+}
+function activatePlus() {
+  isPlus = true;
+
+  // Plan badge on home screen
+  const badge = document.getElementById('plan-badge');
+  if (badge) badge.style.display = 'inline-block';
+
+  // Fav segment — hide lock card, show full waveform history note
+  const favsegLock = document.getElementById('favseg-lock-card');
+  if (favsegLock) {
+    favsegLock.innerHTML = '<div style="display:flex;align-items:center;gap:10px;justify-content:center;"><span style="color:#1DB954;font-size:13px;font-weight:700;">✓ Full segment history unlocked</span></div><div style="color:#B3B3B3;font-size:11px;margin-top:6px;">Showing all 284 replay moments from this week. Tap any bar to jump to that segment.</div>';
+    favsegLock.style.background = 'rgba(29,185,84,0.08)';
+    favsegLock.style.borderColor = 'rgba(29,185,84,0.2)';
+    favsegLock.style.border = '1px solid rgba(29,185,84,0.25)';
+  }
+
+  // Memory — hide lock card, show extra memory card
+  const memLock = document.getElementById('memory-lock-card');
+  if (memLock) memLock.style.display = 'none';
+  const memExtra = document.getElementById('memory-extra');
+  if (memExtra) memExtra.style.display = 'block';
+
+  // Mashup — swap blurred content for unlocked version, hide overlay
+  const mashupContent = document.getElementById('mashup-content');
+  const mashupUnlocked = document.getElementById('mashup-unlocked');
+  const mashupOverlay = document.getElementById('mashup-lock-overlay');
+  if (mashupContent) mashupContent.style.display = 'none';
+  if (mashupUnlocked) mashupUnlocked.style.display = 'block';
+  if (mashupOverlay) mashupOverlay.style.display = 'none';
+
+  // Shared intelligence — swap blurred for unlocked, hide overlay
+  const sharedContent = document.getElementById('shared-content');
+  const sharedUnlocked = document.getElementById('shared-unlocked');
+  const sharedOverlay = document.getElementById('shared-lock-overlay');
+  if (sharedContent) sharedContent.style.display = 'none';
+  if (sharedUnlocked) sharedUnlocked.style.display = 'block';
+  if (sharedOverlay) sharedOverlay.style.display = 'none';
+
+  // Upgrade screen — swap pay button to active confirmation
+  const payBtn = document.querySelector('#scr-upgrade .pay-btn');
+  if (payBtn) {
+    payBtn.outerHTML = '<div style="margin:16px 20px 0;background:rgba(29,185,84,0.12);border:1px solid rgba(29,185,84,0.3);color:#1DB954;border-radius:28px;padding:14px;font-size:14px;font-weight:700;text-align:center;">✓ Plus is active on your account</div>';
+  }
+}
+
+var _upiSelectedApp = 'gpay';
+var _upiApps = {
+  gpay:    {label:'Google Pay',    bg:'#1a73e8', char:'G'},
+  phonepe: {label:'PhonePe',       bg:'#5f259f', char:'₱'},
+  paytm:   {label:'Paytm',         bg:'#00B9F1', char:'₹'},
+  upiid:   {label:'UPI ID',        bg:'#242424', char:'#'},
+};
+function payNow() {
+  var modal = document.getElementById('pay-modal');
+  modal.style.display = 'flex';
+  upiShowStep(1);
+}
+function closeUpi() {
+  document.getElementById('pay-modal').style.display = 'none';
+}
+function upiShowStep(n) {
+  [1,2,3].forEach(function(i){
+    var el = document.getElementById('upi-step'+i);
+    if (el) el.style.display = i===n ? 'block' : 'none';
+  });
+}
+function upiSelectApp(appKey) {
+  _upiSelectedApp = appKey;
+  if (appKey === 'upiid') { upiShowStep(2); return; }
+  upiShowStep(3);
+  var app = _upiApps[appKey];
+  var logo = document.getElementById('upi-app-logo');
+  if (logo) { logo.textContent = app.char; logo.style.background = app.bg; }
+  var title = document.getElementById('upi-step3-title');
+  if (title) title.textContent = 'Waiting for approval';
+  var desc = document.getElementById('upi-step3-desc');
+  if (desc) desc.textContent = 'Open ' + app.label + ' and approve the payment request to activate your plan.';
+  var ref = document.getElementById('upi-ref-id');
+  if (ref) ref.textContent = 'SPT' + Date.now().toString().slice(-10);
+  setTimeout(function(){ upiSuccess(); }, 2200);
+}
+function upiVerify() {
+  var id = document.getElementById('upi-id-input') ? document.getElementById('upi-id-input').value : '';
+  if (!id || !id.includes('@')) { alert('Please enter a valid UPI ID (e.g. name@okicici)'); return; }
+  _upiSelectedApp = 'upiid';
+  upiShowStep(3);
+  var logo = document.getElementById('upi-app-logo');
+  if (logo) { logo.textContent = '#'; logo.style.background = '#242424'; }
+  var title = document.getElementById('upi-step3-title');
+  if (title) title.textContent = 'Processing payment';
+  var desc = document.getElementById('upi-step3-desc');
+  if (desc) desc.textContent = 'Verifying ' + id + ' and processing your payment…';
+  var ref = document.getElementById('upi-ref-id');
+  if (ref) ref.textContent = 'SPT' + Date.now().toString().slice(-10);
+  setTimeout(function(){ upiSuccess(); }, 2000);
+}
+function upiSuccess() {
+  document.getElementById('pay-modal').style.display = 'none';
+  if (typeof activatePlus === "function") activatePlus(); else if (typeof activateLite === "function") activateLite();
+  var scr = document.getElementById('scr-success');
+  if (scr) {
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.add('hide'); });
+    scr.classList.remove('hide');
+  }
+}
+
+
+document.addEventListener('DOMContentLoaded',function(){var el=document.getElementById('upi-amount-label');if(el)el.textContent='₹99';var el2=document.getElementById('upi-confirm-amount');if(el2)el2.textContent='₹99';});
+</script>
+</body>
+</html>
